@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(ScreenerApp());
@@ -30,7 +31,19 @@ class ScreenerApp extends StatelessWidget {
             initialUrl: _screenerHomeUrl,
             javascriptMode: JavascriptMode.unrestricted,
             userAgent: _proxyUserAgent,
+            navigationDelegate: (NavigationRequest request) {
+              if (request.url.startsWith("https://www.screener.in/")) {
+                return NavigationDecision.navigate;
+              } else {
+                _launchURL(request.url);
+                return NavigationDecision.prevent;
+              }
+            },
           ),
         ));
   }
+}
+
+_launchURL(String url) async {
+  await launch(url);
 }
