@@ -33,31 +33,33 @@ class _ScreenerAppState extends State<ScreenerApp> {
               return true;
             }
           },
-          child: Scaffold(
-            appBar: PreferredSize(
-                preferredSize: const Size.fromHeight(0),
-                child: AppBar(
-                  title: const SizedBox(
-                    height: kToolbarHeight,
-                  ),
-                )),
-            body: WebView(
-              initialUrl: _screenerHomeUrl,
-              javascriptMode: JavascriptMode.unrestricted,
-              userAgent: _proxyUserAgent,
-              onWebViewCreated: (controller) {
-                this.controller = controller;
-              },
-              navigationDelegate: (NavigationRequest request) {
-                if (request.url.startsWith(_screenerHomeUrl)) {
-                  return NavigationDecision.navigate;
-                } else if (request.url.contains("google")) {
-                  return NavigationDecision.navigate;
-                } else {
-                  _launchURL(request.url);
-                  return NavigationDecision.prevent;
-                }
-              },
+          child: SafeArea(
+            child: Scaffold(
+              appBar: PreferredSize(
+                  preferredSize: const Size.fromHeight(0),
+                  child: AppBar(
+                    title: const SizedBox(
+                      height: kToolbarHeight,
+                    ),
+                  )),
+              body: WebView(
+                initialUrl: _screenerHomeUrl,
+                javascriptMode: JavascriptMode.unrestricted,
+                userAgent: _proxyUserAgent,
+                onWebViewCreated: (controller) {
+                  this.controller = controller;
+                },
+                navigationDelegate: (NavigationRequest request) {
+                  if (request.url.startsWith(_screenerHomeUrl)) {
+                    return NavigationDecision.navigate;
+                  } else if (request.url.contains("google")) {
+                    return NavigationDecision.navigate;
+                  } else {
+                    _launchURL(request.url);
+                    return NavigationDecision.prevent;
+                  }
+                },
+              ),
             ),
           ),
         ));
