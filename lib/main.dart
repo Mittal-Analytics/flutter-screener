@@ -49,6 +49,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
                 onWebViewCreated: (controller) {
                   this.controller = controller;
                 },
+                zoomEnabled: false,
                 navigationDelegate: (NavigationRequest request) {
                   if (request.url.startsWith(_screenerHomeUrl)) {
                     return NavigationDecision.navigate;
