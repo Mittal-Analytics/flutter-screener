@@ -6,59 +6,61 @@ void main() {
   runApp(const ScreenerApp());
 }
 
-class ScreenerApp extends StatelessWidget {
+class ScreenerApp extends StatefulWidget {
   const ScreenerApp({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    const _appTitle = "Screener";
-    return const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: _appTitle,
-        home: ScreenerHome(),
-    );
-  }
+  State<ScreenerApp> createState() => _ScreenerAppState();
 }
 
-class ScreenerHome extends StatelessWidget {
-  const ScreenerHome({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(0),
-          child: AppBar(
-            title: const SizedBox(
-              height: kToolbarHeight,
-            ),
-          )),
-      body: const ScreenerWebView(),
-    );
-  }
-}
-
-class ScreenerWebView extends StatelessWidget {
-  const ScreenerWebView({Key? key}) : super(key: key);
+class _ScreenerAppState extends State<ScreenerApp> {
+  late WebViewController controller;
 
   @override
   Widget build(BuildContext context) {
     const _screenerHomeUrl = "https://www.screener.in";
     const _proxyUserAgent =
         "Mozilla/5.0 (Linux; Android 4.1.1; Galaxy Nexus Build/JRO03C) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19";
-    return WebView(
-      initialUrl: _screenerHomeUrl,
-      javascriptMode: JavascriptMode.unrestricted,
-      userAgent: _proxyUserAgent,
-      navigationDelegate: (NavigationRequest request) {
-        if (request.url.startsWith(_screenerHomeUrl)) {
-          return NavigationDecision.navigate;
-        } else {
-          _launchURL(request.url);
-          return NavigationDecision.prevent;
-        }
-      },
-    );
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Screener',
+        home: WillPopScope(
+          onWillPop: () async {
+            if (await controller.canGoBack()) {
+              controller.goBack();
+              return false;
+            } else {
+              return true;
+            }
+          },
+          child: Scaffold(
+            appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(0),
+                child: AppBar(
+                  title: const SizedBox(
+                    height: kToolbarHeight,
+                  ),
+                )),
+            body: WebView(
+              initialUrl: _screenerHomeUrl,
+              javascriptMode: JavascriptMode.unrestricted,
+              userAgent: _proxyUserAgent,
+              onWebViewCreated: (controller) {
+                this.controller = controller;
+              },
+              navigationDelegate: (NavigationRequest request) {
+                if (request.url.startsWith(_screenerHomeUrl)) {
+                  return NavigationDecision.navigate;
+                } else if (request.url.contains("google")) {
+                  return NavigationDecision.navigate;
+                } else {
+                  _launchURL(request.url);
+                  return NavigationDecision.prevent;
+                }
+              },
+            ),
+          ),
+        ));
   }
 }
 
