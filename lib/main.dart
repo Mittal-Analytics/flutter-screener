@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:io';
+import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'homepage.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isAndroid) {
+    await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
+  }
+  await FlutterDownloader.initialize(debug: true);
+  // set true to enable printing logs to console
+  await Permission.storage.request();
+  await Permission.mediaLibrary.request();
+  // ask for storage permission on app create
   runApp(const ScreenerApp());
 }
 
@@ -42,25 +57,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
                       height: kToolbarHeight,
                     ),
                   )),
-              body: WebView(
-                initialUrl: _screenerHomeUrl,
-                javascriptMode: JavascriptMode.unrestricted,
-                userAgent: _proxyUserAgent,
-                onWebViewCreated: (controller) {
-                  this.controller = controller;
-                },
-                zoomEnabled: false,
-                navigationDelegate: (NavigationRequest request) {
-                  if (request.url.startsWith(_screenerHomeUrl)) {
-                    return NavigationDecision.navigate;
-                  } else if (request.url.contains("google")) {
-                    return NavigationDecision.navigate;
-                  } else {
-                    _launchURL(request.url);
-                    return NavigationDecision.prevent;
-                  }
-                },
-              ),
+              body: HomePage(),
             ),
           ),
         ));
