@@ -1,4 +1,9 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -45,13 +50,24 @@ class _ScreenerAppState extends State<ScreenerApp> {
               body: WebView(
                 initialUrl: _screenerHomeUrl,
                 javascriptMode: JavascriptMode.unrestricted,
+                // javascriptChannels: <JavascriptChannel>[
+                //   _jsFormCallback(context),
+                // ].toSet(),
                 userAgent: _proxyUserAgent,
                 onWebViewCreated: (controller) {
                   this.controller = controller;
                 },
                 zoomEnabled: false,
                 navigationDelegate: (NavigationRequest request) {
-                  if (request.url.startsWith(_screenerHomeUrl)) {
+                  if (request.url.contains("export")) {
+                    var csrfToken = controller.runJavascript(
+                        'document.getElementsByName("csrfmiddlewaretoken")[0].value');
+                    print(request.url);
+                    print(controller.runJavascriptReturningResult(
+                        'console.log(document.getElementsByName("csrfmiddlewaretoken")[0].value)'));
+                    openFile(url: request.url, fileName: "test.xlsx");
+                    return NavigationDecision.navigate;
+                  } else if (request.url.startsWith(_screenerHomeUrl)) {
                     return NavigationDecision.navigate;
                   } else if (request.url.contains("google")) {
                     return NavigationDecision.navigate;
@@ -64,6 +80,46 @@ class _ScreenerAppState extends State<ScreenerApp> {
             ),
           ),
         ));
+  }
+}
+
+JavascriptChannel _jsFormCallback(BuildContext context) {
+  return JavascriptChannel(
+      name: 'CsrfToken',
+      onMessageReceived: (JavascriptMessage message) {
+        print(message);
+      });
+}
+
+Future openFile({required url, required String fileName}) async {
+  print(fileName);
+  final file = await downloadFile(url, fileName);
+  if (file == null) return;
+  print('Path: ${file.path}');
+  OpenFile.open(file.path);
+}
+
+Future<File?> downloadFile(String url, String name) async {
+  final appStorage = await getApplicationDocumentsDirectory();
+  final file = File('${appStorage.path}/$name');
+  print(file);
+  try {
+    final response = await Dio().post(
+      url,
+      options: Options(
+        responseType: ResponseType.bytes,
+        followRedirects: true,
+        receiveTimeout: 0,
+      ),
+    );
+    print(response);
+    final raf = file.openSync(mode: FileMode.write);
+    raf.writeFromSync(response.data);
+    await raf.close();
+    return file;
+  } catch (e) {
+    print(e);
+    return null;
   }
 }
 
