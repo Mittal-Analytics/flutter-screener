@@ -36,12 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   webview_flutter: ^3.0.0
   url_launcher: ^6.0.18
-  dio: ^4.0.4
-  path_provider: ^2.0.8
-  permission_handler: ^8.3.0
-  ext_storage: ^1.0.3
-  open_file: ^3.2.1
   file_picker: ^4.3.3
+  connectivity_plus: ^2.2.0
 
 dev_dependencies:
   flutter_test:
@@ -72,9 +68,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/images/circle-icon@144px.png  
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
