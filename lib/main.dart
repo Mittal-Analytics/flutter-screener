@@ -7,7 +7,7 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart' hide CookieManager;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +25,7 @@ class ScreenerApp extends StatefulWidget {
 }
 
 class _ScreenerAppState extends State<ScreenerApp> {
-  // late WebViewController controller;
+  late WebViewController controller;
 
   @override
   void initState() {
@@ -203,8 +203,4 @@ class _ScreenerAppState extends State<ScreenerApp> {
       }
     }
   }
-}
-
-_launchURL(String url) async {
-  await launch(url);
 }
