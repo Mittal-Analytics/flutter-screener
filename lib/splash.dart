@@ -47,11 +47,6 @@ class _SplashState extends State<Splash> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Image.asset("assets/images/circle-icon@144px.png"),
-              const Text(
-                "Checking Network",
-                textScaleFactor: 2,
-                style: TextStyle(color: Colors.white),
-              ),
             ]),
       ),
     );

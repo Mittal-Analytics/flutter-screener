@@ -1,4 +1,4 @@
-package com.example.screener_mobile
+package com.screener.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

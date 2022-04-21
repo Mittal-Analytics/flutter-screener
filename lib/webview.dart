@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -42,9 +41,6 @@ class _ScreenerAppState extends State<ScreenerApp> {
               body: WebView(
                 initialUrl: _screenerHomeUrl,
                 javascriptMode: JavascriptMode.unrestricted,
-                // javascriptChannels: <JavascriptChannel>[
-                //   _jsFormCallback(context),
-                // ].toSet(),
                 userAgent: _proxyUserAgent,
                 onWebViewCreated: (controller) {
                   this.controller = controller;
