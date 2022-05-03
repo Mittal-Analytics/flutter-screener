@@ -36,6 +36,12 @@ dependencies:
   cupertino_icons: ^1.0.2
   webview_flutter: ^3.0.0
   url_launcher: ^6.0.18
+<<<<<<< Updated upstream
+=======
+  connectivity_plus: ^2.2.0
+  razorpay_flutter: ^1.3.0
+  http: ^0.13.4
+>>>>>>> Stashed changes
 
 dev_dependencies:
   flutter_test:
