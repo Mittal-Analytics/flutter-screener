@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -17,6 +19,9 @@ class _ScreenerAppState extends State<ScreenerApp> {
   final _razorpay = Razorpay();
   var options = {};
   late bool isLoading = false;
+  late String postUrl = "'https://jsonplaceholder.typicode.com/posts'";
+  late String postParam = "{}";
+  late String requestMethod = "'post'";
   @override
   void initState() {
     super.initState();
@@ -31,27 +36,48 @@ class _ScreenerAppState extends State<ScreenerApp> {
     _razorpay.clear();
   }
 
-  Future<void> _postPayment(url, body) async {
-    setState(() {
-      isLoading = true;
-    });
-    var response = await http.post(url, body: body);
-    await controller.loadUrl('http://10.0.2.2:8000/premium/member/');
+  void jsFunction(postUrl, postParam, requestMethod) {
+    postUrl = "'http://10.0.2.2:8000/payment/capture/'";
+    // postParam =
+    //     "{razorpay_payment_id: '12456', plan_name:'kavi', currency: 'inr', user_id:'1'}";
+    postParam = "$postParam";
+    requestMethod = "'post'";
+    controller.runJavascript("function post(path, params, method='post') {" +
+        "const form = document.createElement('form');" +
+        "form.method = method;" +
+        "form.action = path;" +
+        "for (const key in params) {" +
+        "if (params.hasOwnProperty(key)) {" +
+        "const hiddenField = document.createElement('input');" +
+        "hiddenField.type = 'hidden';" +
+        "hiddenField.name = key;" +
+        "hiddenField.value = params[key];" +
+        "form.appendChild(hiddenField);}}document.body.appendChild(form);form.submit();}" +
+        "post($postUrl, $postParam, method=$requestMethod)");
+  }
+
+  Future<void> _postPayment(body) async {
+    var url = Uri.parse("http://10.0.2.2:8000/payment/capture/");
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    var url = Uri.parse("http://10.0.2.2:8000/payment/capture/");
     Map body = {
       'razorpay_payment_id': response.paymentId,
       'plan_name': options['notes']['plan_name'],
       'currency': options['currency'] == "INR" ? "inr" : 'usd',
       'user_id': options['notes']['user_id'],
     };
-    _postPayment(url, body);
+    jsFunction("/payment/capture", jsonEncode(body), requestMethod);
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    print('Error Response: $response');
+    Map body = {
+      'razorpay_payment_id': '',
+      'plan_name': options['notes']['plan_name'],
+      'currency': options['currency'] == "INR" ? "inr" : 'usd',
+      'user_id': options['notes']['user_id'],
+    };
+    _postPayment(body);
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
@@ -114,14 +140,15 @@ class _ScreenerAppState extends State<ScreenerApp> {
                   }
                 },
                 onPageFinished: (String url) async {
-                  if (url.endsWith('premium/member/')) {
-                    setState(() {
-                      isLoading = false;
-                    });
-                  }
                   if (url.contains('premium')) {
-                    await controller.runJavascript(
-                        "if (document.getElementById('razorpay-info')){var info = document.getElementById('razorpay-info'); btn1 = document.createElement('button');function cloneAttributes(element, sourceNode) { let attr; let attributes = Array.prototype.slice.call(sourceNode.attributes); while(attr =attributes.pop()) {element.setAttribute(attr.nodeName, attr.nodeValue);}};cloneAttributes(btn1, info); info.parentElement.append(btn1);info.style.display = 'none'; btn1.innerText='BUY NOW';btn1.addEventListener('click', function() {options = {'key': info.getAttribute('data-key'),'amount': info.getAttribute('data-amount'),'currency': 'INR','name': 'Mittal Analytics (P) Ltd','description': info.getAttribute('data-description'),'display_currency': info.getAttribute('data-display_currency'),'display_amount': info.getAttribute('data-display_amount'),'prefill': {'name': info.getAttribute('data-prefill.name'),'email': info.getAttribute('data-prefill.email')},'handler': function (response) {var inputs = info.form.elements;for (var i = 0; i < inputs.length; i++) {if (inputs[i].name === 'razorpay_payment_id') {inputs[i].value = response.razorpay_payment_id}};info.form.submit()},'notes': {'plan_name': info.getAttribute('data-notes.plan_name'),'user_id': info.getAttribute('data-notes.user_id')}};RAZORPAY.postMessage(JSON.stringify(options))})}");
+                    await controller.runJavascript("if (document.getElementById('razorpay-info'))" +
+                        "{var info = document.getElementById('razorpay-info'); btn1 = document.createElement('button');" +
+                        "function cloneAttributes(element, sourceNode) { let attr; let attributes = Array.prototype.slice.call(sourceNode.attributes); while(attr =attributes.pop()) {element.setAttribute(attr.nodeName, attr.nodeValue);}};" +
+                        "cloneAttributes(btn1, info); info.parentElement.append(btn1);info.style.display = 'none'; btn1.innerText='BUY NOW';" +
+                        "btn1.addEventListener('click', function() {options = {'key': info.getAttribute('data-key'),'amount': info.getAttribute('data-amount'),'currency': 'INR','name': 'Mittal Analytics (P) Ltd','description': info.getAttribute('data-description')," +
+                        "'display_currency': info.getAttribute('data-display_currency'),'display_amount': info.getAttribute('data-display_amount'),'prefill': {'name': info.getAttribute('data-prefill.name'),'email': info.getAttribute('data-prefill.email')}," +
+                        "'handler': function (response) {var inputs = info.form.elements;for (var i = 0; i < inputs.length; i++) {if (inputs[i].name === 'razorpay_payment_id') {inputs[i].value = response.razorpay_payment_id}};info.form.submit()},'notes': {'plan_name': info.getAttribute('data-notes.plan_name')" +
+                        ",'user_id': info.getAttribute('data-notes.user_id')}};RAZORPAY.postMessage(JSON.stringify(options))})}");
                   }
                 },
                 // ignore: prefer_collection_literals
