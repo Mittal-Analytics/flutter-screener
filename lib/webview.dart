@@ -16,8 +16,9 @@ class _ScreenerAppState extends State<ScreenerApp> {
   late WebViewController controller;
   final _razorpay = Razorpay();
   var options = {};
-  late String _screenerHomeUrl;
-  late String paymentUrl;
+  late final String _screenerHomeUrl =
+      widget.debug ? "http://10.0.2.2:8000" : 'https://www.screener.in/';
+  late String paymentUrl = "'$_screenerHomeUrl/payment/capture/'";
   late String postParam = "{}";
   late String requestMethod = "'post'";
 
@@ -52,25 +53,19 @@ class _ScreenerAppState extends State<ScreenerApp> {
         "post($postUrl, $postParam, method=$requestMethod)");
   }
 
-  _paymentbody(paymentId, [planName, currency, userId]) {
-    Map body = {
+  _paymentbody(paymentId) {
+    return {
       'razorpay_payment_id': paymentId,
-      'plan_name': planName ? planName : options['notes']['plan_name'],
-      'currency': currency
-          ? currency
-          : options['currency'] == "INR"
-              ? "inr"
-              : 'usd',
-      'user_id': userId ? userId : options['notes']['user_id'],
+      'plan_name': options['notes']['plan_name'],
+      'currency': options['currency'] == "INR" ? "inr" : 'usd',
+      'user_id': options['notes']['user_id'],
     };
-    return body;
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
     Map body = _paymentbody(
       response.paymentId,
     );
-    print(body);
     postFunction(paymentUrl, jsonEncode(body), requestMethod);
   }
 
@@ -99,10 +94,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
 
   @override
   Widget build(BuildContext context) {
-    final String _screenerHomeUrl =
-        widget.debug ? "http://10.0.2.2:8000" : 'https://www.screener.in/';
     const _proxyUserAgent = "random";
-    final paymentUrl = "'$_screenerHomeUrl/payment/capture/'";
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
