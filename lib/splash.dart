@@ -3,7 +3,8 @@ import './checkinternet.dart';
 import './webview.dart';
 
 class Splash extends StatefulWidget {
-  const Splash({Key? key}) : super(key: key);
+  final debug;
+  Splash({Key? key, required this.debug}) : super(key: key);
 
   @override
   State<Splash> createState() => _SplashState();
@@ -31,8 +32,10 @@ class _SplashState extends State<Splash> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Connected to the internet'),
         ));
-        Navigator.pushReplacement(context,
-            MaterialPageRoute(builder: (context) => const ScreenerApp()));
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => ScreenerApp(debug: widget.debug)));
       }
     });
   }
