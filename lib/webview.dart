@@ -17,7 +17,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
   final _razorpay = Razorpay();
   var options = {};
   late final String _screenerHomeUrl =
-      widget.debug ? "http://10.0.2.2:8000" : 'https://www.screener.in/';
+      widget.debug ? "http://10.0.2.2:8000" : 'https://www.screener.in';
   late String paymentUrl = "'$_screenerHomeUrl/payment/capture/'";
   late String postParam = "{}";
   late String requestMethod = "'post'";
