@@ -3,8 +3,8 @@ import './checkinternet.dart';
 import './webview.dart';
 
 class Splash extends StatefulWidget {
-  final debug;
-  Splash({Key? key, required this.debug}) : super(key: key);
+  final bool debug;
+  const Splash({Key? key, required this.debug}) : super(key: key);
 
   @override
   State<Splash> createState() => _SplashState();
@@ -16,9 +16,9 @@ class _SplashState extends State<Splash> {
   @override
   void initState() {
     super.initState();
-    Future<int> a = CheckInternet().checkInternetConnection();
-    a.then((value) {
-      if (value == 0) {
+    Future<int> internetState = CheckInternet().checkInternetConnection();
+    internetState.then((internetStatus) {
+      if (internetStatus == 0) {
         setState(() {
           checkInt = 0;
         });

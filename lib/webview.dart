@@ -5,7 +5,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
 
 class ScreenerApp extends StatefulWidget {
-  final debug;
+  final bool debug;
   const ScreenerApp({Key? key, required this.debug}) : super(key: key);
 
   @override
@@ -53,7 +53,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
         "post($postUrl, $postParam, method=$requestMethod)");
   }
 
-  _paymentbody(paymentId) {
+  _paymentBody(paymentId) {
     return {
       'razorpay_payment_id': paymentId,
       'plan_name': options['notes']['plan_name'],
@@ -63,21 +63,21 @@ class _ScreenerAppState extends State<ScreenerApp> {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    Map body = _paymentbody(
+    Map body = _paymentBody(
       response.paymentId,
     );
     postFunction(paymentUrl, jsonEncode(body), requestMethod);
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    Map body = _paymentbody(
+    Map body = _paymentBody(
       '',
     );
     postFunction(paymentUrl, jsonEncode(body), requestMethod);
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
-    Map body = _paymentbody(
+    Map body = _paymentBody(
       '',
     );
     postFunction(paymentUrl, jsonEncode(body), requestMethod);
@@ -126,7 +126,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
               },
               zoomEnabled: false,
               navigationDelegate: (NavigationRequest request) {
-                if (request.url.contains('premium')) {
+                if (request.url.contains("premium")) {
                   return NavigationDecision.navigate;
                 } else if (request.url.startsWith(_screenerHomeUrl)) {
                   return NavigationDecision.navigate;
@@ -138,14 +138,21 @@ class _ScreenerAppState extends State<ScreenerApp> {
                 }
               },
               onPageFinished: (String url) async {
-                if (url.contains('premium')) {
-                  await controller.runJavascript("if (document.getElementById('razorpay-info'))" +
-                      "{var info = document.getElementById('razorpay-info'); btn1 = document.createElement('button');" +
+                if (url.contains("premium")) {
+                  await controller.runJavascript("if (document.getElementById('razorpay-info')) {" +
+                      "var info = document.getElementById('razorpay-info');" +
+                      "btn1 = document.createElement('button');" +
                       "function cloneAttributes(element, sourceNode) { let attr; let attributes = Array.prototype.slice.call(sourceNode.attributes); while(attr =attributes.pop()) {element.setAttribute(attr.nodeName, attr.nodeValue);}};" +
-                      "cloneAttributes(btn1, info); info.parentElement.append(btn1);info.style.display = 'none'; btn1.innerText='BUY NOW';" +
-                      "btn1.addEventListener('click', function() {options = {'key': info.getAttribute('data-key'),'amount': info.getAttribute('data-amount'),'currency': 'INR','name': 'Mittal Analytics (P) Ltd','description': info.getAttribute('data-description')," +
-                      "'display_currency': info.getAttribute('data-display_currency'),'display_amount': info.getAttribute('data-display_amount'),'prefill': {'name': info.getAttribute('data-prefill.name'),'email': info.getAttribute('data-prefill.email')}," +
-                      "'handler': function (response) {var inputs = info.form.elements;for (var i = 0; i < inputs.length; i++) {if (inputs[i].name === 'razorpay_payment_id') {inputs[i].value = response.razorpay_payment_id}};info.form.submit()},'notes': {'plan_name': info.getAttribute('data-notes.plan_name')" +
+                      "cloneAttributes(btn1, info);" +
+                      "info.parentElement.append(btn1);" +
+                      "info.style.display = 'none';" +
+                      "btn1.innerText='BUY NOW';" +
+                      "btn1.addEventListener('click', function() {" +
+                      "options = {'key': info.getAttribute('data-key'),'amount': info.getAttribute('data-amount'),'currency': 'INR','name': 'Mittal Analytics (P) Ltd','description': info.getAttribute('data-description')," +
+                      "'display_currency': info.getAttribute('data-display_currency'),'display_amount': info.getAttribute('data-display_amount'),'prefill': {'name': info.getAttribute('data-prefill.name')," +
+                      "'email': info.getAttribute('data-prefill.email')}," +
+                      "'handler': function (response) {var inputs = info.form.elements;for (var i = 0; i < inputs.length; i++) {if (inputs[i].name === 'razorpay_payment_id') {inputs[i].value = response.razorpay_payment_id}};info.form.submit()}," +
+                      "'notes': {'plan_name': info.getAttribute('data-notes.plan_name')" +
                       ",'user_id': info.getAttribute('data-notes.user_id')}};RAZORPAY.postMessage(JSON.stringify(options))})}");
                 }
               },
@@ -162,5 +169,5 @@ class _ScreenerAppState extends State<ScreenerApp> {
 }
 
 _launchURL(String url) async {
-  await launch(url);
+  await launchUrl(Uri.parse(url));
 }
