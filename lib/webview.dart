@@ -3,6 +3,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class ScreenerApp extends StatefulWidget {
   final bool debug;
@@ -19,9 +20,11 @@ class _ScreenerAppState extends State<ScreenerApp> {
   late final String _screenerHomeUrl =
       widget.debug ? "http://10.0.2.2:8000" : 'https://www.screener.in';
   late String paymentUrl = "'$_screenerHomeUrl/payment/capture/'";
+  late String googleUrl = "'$_screenerHomeUrl/login/flutter_auth/'";
   late String postParam = "{}";
   late String requestMethod = "'post'";
-
+  GoogleSignIn _googleSignIn = GoogleSignIn();
+  late String googleUser;
   @override
   void initState() {
     super.initState();
@@ -60,6 +63,29 @@ class _ScreenerAppState extends State<ScreenerApp> {
       'currency': options['currency'] == "INR" ? "inr" : 'usd',
       'user_id': options['notes']['user_id'],
     };
+  }
+
+  Future<void> _handleSignOut() async {
+    if (googleUser.length > 1) {
+      await _googleSignIn.disconnect();
+    }
+  }
+
+  Future<void> _handleSignIn() async {
+    try {
+      var user = await _googleSignIn.signIn();
+      if (user != null) {
+        googleUser = "${user.displayName}";
+        var _googleLogin = {
+          'displayName': user.displayName,
+          'id': user.id,
+          'email': user.email
+        };
+        postFunction(googleUrl, jsonEncode(_googleLogin), requestMethod);
+      }
+    } catch (error) {
+      print(error);
+    }
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
@@ -126,7 +152,11 @@ class _ScreenerAppState extends State<ScreenerApp> {
               },
               zoomEnabled: false,
               navigationDelegate: (NavigationRequest request) {
-                if (request.url.contains("premium")) {
+                if (request.url.endsWith('login/google/')) {
+                  _handleSignIn();
+                  return NavigationDecision.prevent;
+                } else if (request.url.contains('home')) {
+                  _handleSignOut();
                   return NavigationDecision.navigate;
                 } else if (request.url.startsWith(_screenerHomeUrl)) {
                   return NavigationDecision.navigate;
