@@ -19,16 +19,10 @@ class _SplashState extends State<Splash> {
     Future<int> internetState = CheckInternet().checkInternetConnection();
     internetState.then((internetStatus) {
       if (internetStatus == 0) {
-        setState(() {
-          checkInt = 0;
-        });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('No internet connection!'),
         ));
       } else {
-        setState(() {
-          checkInt = 1;
-        });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Connected to the internet'),
         ));
