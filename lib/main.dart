@@ -10,9 +10,9 @@ class ScreenerHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'Screener',
-      home: Splash(debug: true),
+      home: Splash(debug: false),
       debugShowCheckedModeBanner: false,
     );
   }
