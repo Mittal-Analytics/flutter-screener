@@ -23,7 +23,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
   late String googleUrl = "'$_screenerHomeUrl/login/flutter_auth/'";
   late String postParam = "{}";
   late String requestMethod = "'post'";
-  GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
   late String googleUser;
   @override
   void initState() {
