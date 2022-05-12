@@ -74,15 +74,10 @@ class _ScreenerAppState extends State<ScreenerApp> {
   Future<void> _handleSignIn() async {
     try {
       var user = await _googleSignIn.signIn();
-      if (user != null) {
-        googleUser = "${user.displayName}";
-        var _googleLogin = {
-          'displayName': user.displayName,
-          'id': user.id,
-          'email': user.email
-        };
-        postFunction(googleUrl, jsonEncode(_googleLogin), requestMethod);
-      }
+      var accessToken = user.authentication.accessToken;
+      postFunction(googleUrl, jsonEncode({
+        'accessToken': accessToken
+      }), requestMethod);
     } catch (error) {
       print(error);
     }
