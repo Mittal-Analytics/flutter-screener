@@ -81,7 +81,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
             requestMethod);
       }
     } catch (error) {
-      print(error);
+      return;
     }
   }
 
@@ -149,10 +149,10 @@ class _ScreenerAppState extends State<ScreenerApp> {
               },
               zoomEnabled: false,
               navigationDelegate: (NavigationRequest request) {
-                if (request.url.endsWith('login/google/')) {
+                if (request.url.endsWith("login/google/")) {
                   _handleSignIn();
                   return NavigationDecision.prevent;
-                } else if (request.url.contains('home')) {
+                } else if (request.url.contains("home")) {
                   _handleSignOut();
                   return NavigationDecision.navigate;
                 } else if (request.url.startsWith(_screenerHomeUrl)) {
