@@ -20,7 +20,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
   late final String _screenerHomeUrl =
       widget.debug ? "http://10.0.2.2:8000" : 'https://www.screener.in';
   late String paymentUrl = "'$_screenerHomeUrl/payment/capture/'";
-  late String googleUrl = "'$_screenerHomeUrl/login/flutter_auth/'";
+  late String googleLoginUrl = "'$_screenerHomeUrl/login/flutter_auth/'";
   late String postParam = "{}";
   late String requestMethod = "'post'";
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -77,7 +77,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
       if (user != null) {
         var authToken = await user.authentication;
         var accessToken = authToken.accessToken;
-        postFunction(googleUrl, jsonEncode({'access_token': accessToken}),
+        postFunction(googleLoginUrl, jsonEncode({'access_token': accessToken}),
             requestMethod);
       }
     } catch (error) {
