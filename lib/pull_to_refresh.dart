@@ -5,7 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class DragGesturePullToRefresh extends VerticalDragGestureRecognizer {
-  static const double EXCEEDS_LOADING_TIME = 3000;
+  static const double MAX_LOAD_TIME = 3000;
 
   late BuildContext _context;
   late WebViewController _controller;
@@ -81,11 +81,10 @@ class DragGesturePullToRefresh extends VerticalDragGestureRecognizer {
 
   DragGesturePullToRefresh() {
     onStart = (DragStartDetails dragDetails) {
-      // debugPrint('MyWebViewWidget:onStart(): $dragDetails');
       if (!isLoading ||
           (msLoading > 0 &&
               (DateTime.now().millisecondsSinceEpoch - msLoading) >
-                  EXCEEDS_LOADING_TIME)) {
+                  MAX_LOAD_TIME)) {
         _controller.getScrollY().then((scrollYPos) {
           if (scrollYPos == 0) {
             dragStarted = true;
