@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
 import './pull_to_refresh.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class ScreenerApp extends StatefulWidget {
   final bool debug;
@@ -19,12 +20,15 @@ class _ScreenerAppState extends State<ScreenerApp> {
   final _razorpay = Razorpay();
   var options = {};
   late final String _screenerHomeUrl =
-      widget.debug ? "http://10.0.2.2:8000" : 'https://www.screener.in';
+      widget.debug ? "http://10.0.2.2:8000" : "https://www.screener.in";
   late String paymentUrl = "'$_screenerHomeUrl/payment/capture/'";
+  late String googleLoginUrl = "'$_screenerHomeUrl/auth/flutter/'";
   late String postParam = "{}";
   late String requestMethod = "'post'";
   late DragGesturePullToRefresh dragGesturePullToRefresh;
 
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  late String googleUser;
   @override
   void initState() {
     super.initState();
@@ -64,6 +68,28 @@ class _ScreenerAppState extends State<ScreenerApp> {
       'currency': options['currency'] == "INR" ? "inr" : 'usd',
       'user_id': options['notes']['user_id'],
     };
+  }
+
+  Future<void> _handleSignOut() async {
+    if (googleUser.length > 1) {
+      await _googleSignIn.disconnect();
+    }
+  }
+
+  Future<void> _handleSignIn() async {
+    try {
+      var user = await _googleSignIn.signIn();
+      if (user != null) {
+        var authToken = await user.authentication;
+        var accessToken = authToken.accessToken;
+        postFunction(googleLoginUrl, jsonEncode({'access_token': accessToken}),
+            requestMethod);
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Error occured $error. Please try again later."),
+      ));
+    }
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
