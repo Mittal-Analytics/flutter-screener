@@ -23,7 +23,6 @@ class _ScreenerAppState extends State<ScreenerApp> {
   late String paymentUrl = "'$_screenerHomeUrl/payment/capture/'";
   late String postParam = "{}";
   late String requestMethod = "'post'";
-  late String googleUser;
   late DragGesturePullToRefresh dragGesturePullToRefresh;
 
   @override

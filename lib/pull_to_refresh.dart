@@ -10,18 +10,15 @@ class DragGesturePullToRefresh extends VerticalDragGestureRecognizer {
   late BuildContext _context;
   late WebViewController _controller;
 
-  // loading
   Completer<void> completer = Completer<void>();
   int msLoading = 0;
   bool isLoading = true;
 
-  // drag
   double height = 200;
   bool dragStarted = false;
   double dragDistance = 0;
 
   @override
-  //override rejectGesture here
   void rejectGesture(int pointer) {
     acceptGesture(pointer);
   }
