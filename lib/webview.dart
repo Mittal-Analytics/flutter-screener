@@ -26,9 +26,8 @@ class _ScreenerAppState extends State<ScreenerApp> {
   late String postParam = "{}";
   late String requestMethod = "'post'";
   late DragGesturePullToRefresh dragGesturePullToRefresh;
-
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  late String googleUser;
+  late bool googleUser;
   @override
   void initState() {
     super.initState();
@@ -71,7 +70,8 @@ class _ScreenerAppState extends State<ScreenerApp> {
   }
 
   Future<void> _handleSignOut() async {
-    if (googleUser.length > 1) {
+    if (googleUser) {
+      googleUser = false;
       await _googleSignIn.disconnect();
     }
   }
@@ -82,6 +82,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
       if (user != null) {
         var authToken = await user.authentication;
         var accessToken = authToken.accessToken;
+        googleUser = true;
         postFunction(googleLoginUrl, jsonEncode({'access_token': accessToken}),
             requestMethod);
       }
@@ -169,8 +170,10 @@ class _ScreenerAppState extends State<ScreenerApp> {
                   zoomEnabled: false,
                   navigationDelegate: (NavigationRequest request) {
                     if (request.url.endsWith('login/google/')) {
+                      _handleSignIn();
                       return NavigationDecision.prevent;
                     } else if (request.url.contains('home')) {
+                      _handleSignOut();
                       return NavigationDecision.navigate;
                     } else if (request.url.startsWith(_screenerHomeUrl)) {
                       return NavigationDecision.navigate;
@@ -223,5 +226,15 @@ class _ScreenerAppState extends State<ScreenerApp> {
 }
 
 _launchURL(String url) async {
-  await launchUrl(Uri.parse(url));
+  if (url.contains('.pdf')) {
+    await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+  } else {
+    await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.inAppWebView,
+    );
+  }
 }
