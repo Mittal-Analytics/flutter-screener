@@ -226,7 +226,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
 }
 
 _launchURL(String url) async {
-  if (url.contains('.pdf')) {
+  if (url.contains('.pdf') | (url.contains('.zip'))) {
     await launchUrl(
       Uri.parse(url),
       mode: LaunchMode.externalApplication,
