@@ -149,13 +149,6 @@ class _ScreenerAppState extends State<ScreenerApp> {
             },
             child: SafeArea(
               child: Scaffold(
-                appBar: PreferredSize(
-                    preferredSize: const Size.fromHeight(0),
-                    child: AppBar(
-                      title: const SizedBox(
-                        height: kToolbarHeight,
-                      ),
-                    )),
                 body: WebView(
                   initialUrl: _screenerHomeUrl,
                   javascriptMode: JavascriptMode.unrestricted,
@@ -226,15 +219,8 @@ class _ScreenerAppState extends State<ScreenerApp> {
 }
 
 _launchURL(String url) async {
-  if (url.contains('.pdf') | (url.contains('.zip'))) {
-    await launchUrl(
-      Uri.parse(url),
-      mode: LaunchMode.externalApplication,
-    );
-  } else {
-    await launchUrl(
-      Uri.parse(url),
-      mode: LaunchMode.inAppWebView,
-    );
-  }
+  await launchUrl(
+    Uri.parse(url),
+    mode: LaunchMode.externalApplication,
+  );
 }
