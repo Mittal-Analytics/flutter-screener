@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -6,6 +7,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
 import './pull_to_refresh.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:draggable_fab/draggable_fab.dart';
 
 class ScreenerApp extends StatefulWidget {
   final bool debug;
@@ -28,6 +30,7 @@ class _ScreenerAppState extends State<ScreenerApp> {
   late DragGesturePullToRefresh dragGesturePullToRefresh;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   late bool googleUser;
+  List<String> websites = [];
   @override
   void initState() {
     super.initState();
@@ -173,7 +176,9 @@ class _ScreenerAppState extends State<ScreenerApp> {
                     } else if (request.url.contains("google")) {
                       return NavigationDecision.navigate;
                     } else {
-                      _launchURL(request.url);
+                      websites.add(request.url);
+                      buildSheet(websites);
+                      setState(() {});
                       return NavigationDecision.prevent;
                     }
                   },
@@ -209,6 +214,18 @@ class _ScreenerAppState extends State<ScreenerApp> {
                     _razorpayChannel(),
                   ].toSet(),
                 ),
+                floatingActionButton: DraggableFab(
+                  child: ElevatedButton(
+                    child: Text('WebPage ${websites.length}'),
+                    onPressed: () => {
+                      showModalBottomSheet(
+                          isScrollControlled: true,
+                          isDismissible: true,
+                          context: context,
+                          builder: (context) => buildSheet(websites)),
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -224,3 +241,31 @@ _launchURL(String url) async {
     mode: LaunchMode.externalApplication,
   );
 }
+
+Widget buildSheet(websites) => Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: websites.length,
+              itemBuilder: ((context, index) {
+                return Container(
+                  margin: const EdgeInsets.all(10),
+                  height: 200,
+                  child: WebView(
+                    initialUrl: websites[index],
+                    gestureRecognizers: Set()
+                      ..add(
+                        Factory<VerticalDragGestureRecognizer>(
+                          () => VerticalDragGestureRecognizer(),
+                        ),
+                      ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
