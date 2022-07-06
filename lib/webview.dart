@@ -31,6 +31,8 @@ class _ScreenerAppState extends State<ScreenerApp> {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   late bool googleUser;
   List<String> websites = [];
+  bool hideWebsite = true;
+
   @override
   void initState() {
     super.initState();
@@ -135,100 +137,157 @@ class _ScreenerAppState extends State<ScreenerApp> {
   Widget build(BuildContext context) {
     const _proxyUserAgent = "random";
 
-    return RefreshIndicator(
-      onRefresh: () => dragGesturePullToRefresh.refresh(),
-      child: Builder(
-        builder: (context) => MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Screener',
-          home: WillPopScope(
-            onWillPop: () async {
-              if (await controller.canGoBack()) {
-                controller.goBack();
-                return false;
-              } else {
-                return true;
-              }
-            },
-            child: SafeArea(
-              child: Scaffold(
-                body: WebView(
-                  initialUrl: _screenerHomeUrl,
-                  javascriptMode: JavascriptMode.unrestricted,
-                  gestureRecognizers: {Factory(() => dragGesturePullToRefresh)},
-                  userAgent: _proxyUserAgent,
-                  onWebViewCreated: (controller) {
-                    this.controller = controller;
-                    dragGesturePullToRefresh
-                        .setContext(context)
-                        .setController(controller);
-                  },
-                  zoomEnabled: false,
-                  navigationDelegate: (NavigationRequest request) {
-                    if (request.url.endsWith('login/google/')) {
-                      _handleSignIn();
-                      return NavigationDecision.prevent;
-                    } else if (request.url.contains('home')) {
-                      _handleSignOut();
-                      return NavigationDecision.navigate;
-                    } else if (request.url.startsWith(_screenerHomeUrl)) {
-                      return NavigationDecision.navigate;
-                    } else if (request.url.contains("google")) {
-                      return NavigationDecision.navigate;
-                    } else {
-                      websites.add(request.url);
-                      buildSheet(websites);
-                      setState(() {});
-                      return NavigationDecision.prevent;
-                    }
-                  },
-                  onPageStarted: (String url) {
-                    dragGesturePullToRefresh.started();
-                  },
+    return Scaffold(
+      body: Stack(children: [
+        Column(
+          children: [
+            Container(
+              height: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.vertical,
+              child: RefreshIndicator(
+                onRefresh: () => dragGesturePullToRefresh.refresh(),
+                child: Builder(
+                  builder: (context) => MaterialApp(
+                    debugShowCheckedModeBanner: false,
+                    title: 'Screener',
+                    home: WillPopScope(
+                      onWillPop: () async {
+                        if (await controller.canGoBack()) {
+                          controller.goBack();
+                          return false;
+                        } else {
+                          return true;
+                        }
+                      },
+                      child: SafeArea(
+                        child: Scaffold(
+                          body: WebView(
+                            initialUrl: _screenerHomeUrl,
+                            javascriptMode: JavascriptMode.unrestricted,
+                            gestureRecognizers: {
+                              Factory(() => dragGesturePullToRefresh)
+                            },
+                            userAgent: _proxyUserAgent,
+                            onWebViewCreated: (controller) {
+                              this.controller = controller;
+                              dragGesturePullToRefresh
+                                  .setContext(context)
+                                  .setController(controller);
+                            },
+                            zoomEnabled: false,
+                            navigationDelegate: (NavigationRequest request) {
+                              if (request.url.endsWith('login/google/')) {
+                                _handleSignIn();
+                                return NavigationDecision.prevent;
+                              } else if (request.url.contains('home')) {
+                                _handleSignOut();
+                                return NavigationDecision.navigate;
+                              } else if (request.url
+                                  .startsWith(_screenerHomeUrl)) {
+                                return NavigationDecision.navigate;
+                              } else if (request.url.contains("google")) {
+                                return NavigationDecision.navigate;
+                              } else {
+                                websites.add(request.url);
+                                buildSheet(websites);
+                                setState(() {});
+                                return NavigationDecision.prevent;
+                              }
+                            },
+                            onPageStarted: (String url) {
+                              dragGesturePullToRefresh.started();
+                            },
 
-                  onPageFinished: (String url) async {
-                    if (url.contains("premium")) {
-                      await controller.runJavascript("if (document.getElementById('razorpay-info')) {" +
-                          "var info = document.getElementById('razorpay-info');" +
-                          "btn1 = document.createElement('button');" +
-                          "function cloneAttributes(element, sourceNode) { let attr; let attributes = Array.prototype.slice.call(sourceNode.attributes); while(attr =attributes.pop()) {element.setAttribute(attr.nodeName, attr.nodeValue);}};" +
-                          "cloneAttributes(btn1, info);" +
-                          "info.parentElement.append(btn1);" +
-                          "info.style.display = 'none';" +
-                          "btn1.innerText='BUY NOW';" +
-                          "btn1.addEventListener('click', function() {" +
-                          "options = {'key': info.getAttribute('data-key'),'amount': info.getAttribute('data-amount'),'currency': 'INR','name': 'Mittal Analytics (P) Ltd','description': info.getAttribute('data-description')," +
-                          "'display_currency': info.getAttribute('data-display_currency'),'display_amount': info.getAttribute('data-display_amount'),'prefill': {'name': info.getAttribute('data-prefill.name')," +
-                          "'email': info.getAttribute('data-prefill.email')}," +
-                          "'handler': function (response) {var inputs = info.form.elements;for (var i = 0; i < inputs.length; i++) {if (inputs[i].name === 'razorpay_payment_id') {inputs[i].value = response.razorpay_payment_id}};info.form.submit()}," +
-                          "'notes': {'plan_name': info.getAttribute('data-notes.plan_name')" +
-                          ",'user_id': info.getAttribute('data-notes.user_id')}};RAZORPAY.postMessage(JSON.stringify(options))})}");
-                    }
-                    dragGesturePullToRefresh.finished();
-                  },
-                  onWebResourceError: (error) {
-                    dragGesturePullToRefresh.finished();
-                  },
-                  // ignore: prefer_collection_literals
-                  javascriptChannels: <JavascriptChannel>[
-                    _razorpayChannel(),
-                  ].toSet(),
+                            onPageFinished: (String url) async {
+                              if (url.contains("premium")) {
+                                await controller.runJavascript("if (document.getElementById('razorpay-info')) {" +
+                                    "var info = document.getElementById('razorpay-info');" +
+                                    "btn1 = document.createElement('button');" +
+                                    "function cloneAttributes(element, sourceNode) { let attr; let attributes = Array.prototype.slice.call(sourceNode.attributes); while(attr =attributes.pop()) {element.setAttribute(attr.nodeName, attr.nodeValue);}};" +
+                                    "cloneAttributes(btn1, info);" +
+                                    "info.parentElement.append(btn1);" +
+                                    "info.style.display = 'none';" +
+                                    "btn1.innerText='BUY NOW';" +
+                                    "btn1.addEventListener('click', function() {" +
+                                    "options = {'key': info.getAttribute('data-key'),'amount': info.getAttribute('data-amount'),'currency': 'INR','name': 'Mittal Analytics (P) Ltd','description': info.getAttribute('data-description')," +
+                                    "'display_currency': info.getAttribute('data-display_currency'),'display_amount': info.getAttribute('data-display_amount'),'prefill': {'name': info.getAttribute('data-prefill.name')," +
+                                    "'email': info.getAttribute('data-prefill.email')}," +
+                                    "'handler': function (response) {var inputs = info.form.elements;for (var i = 0; i < inputs.length; i++) {if (inputs[i].name === 'razorpay_payment_id') {inputs[i].value = response.razorpay_payment_id}};info.form.submit()}," +
+                                    "'notes': {'plan_name': info.getAttribute('data-notes.plan_name')" +
+                                    ",'user_id': info.getAttribute('data-notes.user_id')}};RAZORPAY.postMessage(JSON.stringify(options))})}");
+                              }
+                              dragGesturePullToRefresh.finished();
+                            },
+                            onWebResourceError: (error) {
+                              dragGesturePullToRefresh.finished();
+                            },
+                            // ignore: prefer_collection_literals
+                            javascriptChannels: <JavascriptChannel>[
+                              _razorpayChannel(),
+                            ].toSet(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                floatingActionButton: DraggableFab(
-                  child: ElevatedButton(
-                    child: Text('WebPage ${websites.length}'),
-                    onPressed: () => {
-                      showModalBottomSheet(
-                          isScrollControlled: true,
-                          isDismissible: true,
-                          context: context,
-                          builder: (context) => buildSheet(websites)),
-                    },
+              ),
+            )
+          ],
+        ),
+        Offstage(
+          offstage: hideWebsite,
+          child: GestureDetector(
+            onTap: () {
+              hideWebsite = true;
+              setState(() {});
+            },
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              color: Colors.black.withOpacity(0.5),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10)),
+                  ),
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: 10,
+                    itemBuilder: ((context, index) {
+                      return Container(
+                        margin: const EdgeInsets.all(10),
+                        height: 200,
+                        child: WebView(
+                          initialUrl: "https://www.google.com/",
+                          gestureRecognizers: Set()
+                            ..add(
+                              Factory<VerticalDragGestureRecognizer>(
+                                () => VerticalDragGestureRecognizer(),
+                              ),
+                            ),
+                        ),
+                      );
+                    }),
                   ),
                 ),
               ),
             ),
           ),
+        ),
+      ]),
+      floatingActionButton: Container(
+        child: ElevatedButton(
+          child: const Text('WebPages'),
+          onPressed: () {
+            hideWebsite = !hideWebsite;
+            setState(() {});
+          },
         ),
       ),
     );
