@@ -7,7 +7,6 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
 import './pull_to_refresh.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:draggable_fab/draggable_fab.dart';
 
 class ScreenerApp extends StatefulWidget {
   final bool debug;
@@ -32,6 +31,8 @@ class _ScreenerAppState extends State<ScreenerApp> {
   late bool googleUser;
   List<String> websites = [];
   bool hideWebsite = true;
+  int websiteIndex = 0;
+  PageController pageController = PageController(keepPage: true);
 
   @override
   void initState() {
@@ -137,29 +138,55 @@ class _ScreenerAppState extends State<ScreenerApp> {
   Widget build(BuildContext context) {
     const _proxyUserAgent = "random";
 
-    return Scaffold(
-      body: Stack(children: [
-        Column(
-          children: [
-            Container(
-              height: MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.vertical,
-              child: RefreshIndicator(
-                onRefresh: () => dragGesturePullToRefresh.refresh(),
-                child: Builder(
-                  builder: (context) => MaterialApp(
-                    debugShowCheckedModeBanner: false,
-                    title: 'Screener',
-                    home: WillPopScope(
-                      onWillPop: () async {
-                        if (await controller.canGoBack()) {
-                          controller.goBack();
-                          return false;
-                        } else {
-                          return true;
-                        }
+    return SafeArea(
+      child: Scaffold(
+        appBar: !hideWebsite
+            ? AppBar(
+                title: Text('Link Bubble'),
+                actions: [
+                  PopupMenuButton(
+                      onSelected: (index) {
+                        // hideWebsite = false;
+                        websiteIndex = int.parse(index.toString());
+                        pageController.jumpToPage(websiteIndex);
+                        // setState(() {});
                       },
-                      child: SafeArea(
+                      itemBuilder: (context) => [
+                            for (var website in websites)
+                              PopupMenuItem(
+                                value: websites.indexOf(website),
+                                child: Row(children: [
+                                  Expanded(child: Text(website)),
+                                  Icon(Icons.close),
+                                ]),
+                              ),
+                          ])
+                ],
+              )
+            : AppBar(
+                toolbarHeight: 0,
+              ),
+        body: Stack(children: [
+          Column(
+            children: [
+              Container(
+                height: MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).padding.vertical,
+                child: RefreshIndicator(
+                  onRefresh: () => dragGesturePullToRefresh.refresh(),
+                  child: Builder(
+                    builder: (context) => MaterialApp(
+                      debugShowCheckedModeBanner: false,
+                      title: 'Screener',
+                      home: WillPopScope(
+                        onWillPop: () async {
+                          if (await controller.canGoBack()) {
+                            controller.goBack();
+                            return false;
+                          } else {
+                            return true;
+                          }
+                        },
                         child: Scaffold(
                           body: WebView(
                             initialUrl: _screenerHomeUrl,
@@ -189,7 +216,6 @@ class _ScreenerAppState extends State<ScreenerApp> {
                                 return NavigationDecision.navigate;
                               } else {
                                 websites.add(request.url);
-                                buildSheet(websites);
                                 setState(() {});
                                 return NavigationDecision.prevent;
                               }
@@ -231,59 +257,63 @@ class _ScreenerAppState extends State<ScreenerApp> {
                     ),
                   ),
                 ),
-              ),
-            )
-          ],
-        ),
-        Offstage(
-          offstage: hideWebsite,
-          child: GestureDetector(
-            onTap: () {
-              hideWebsite = true;
-              setState(() {});
-            },
-            child: Container(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
-              color: Colors.black.withOpacity(0.5),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10)),
-                  ),
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: 10,
-                    itemBuilder: ((context, index) {
-                      return Container(
-                        margin: const EdgeInsets.all(10),
-                        height: 200,
-                        child: WebView(
-                          initialUrl: "https://www.google.com/",
-                          gestureRecognizers: Set()
-                            ..add(
-                              Factory<VerticalDragGestureRecognizer>(
-                                () => VerticalDragGestureRecognizer(),
-                              ),
+              )
+            ],
+          ),
+          Offstage(
+            offstage: hideWebsite,
+            child: GestureDetector(
+              onTap: () {
+                hideWebsite = true;
+                setState(() {});
+              },
+              child: Expanded(
+                child: Stack(
+                  children: [
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height,
+                      color: Colors.black.withOpacity(0.5),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(10),
+                              topRight: Radius.circular(10),
                             ),
+                          ),
+                          height: MediaQuery.of(context).size.height * 0.95,
+                          child: PageView.builder(
+                            controller: pageController,
+                            itemCount: websites.length,
+                            itemBuilder: ((context, index) {
+                              return Container(
+                                margin: const EdgeInsets.all(10),
+                                child: WebView(
+                                  initialUrl: websites[index],
+                                  gestureRecognizers: Set()
+                                    ..add(
+                                      Factory<VerticalDragGestureRecognizer>(
+                                        () => VerticalDragGestureRecognizer(),
+                                      ),
+                                    ),
+                                ),
+                              );
+                            }),
+                          ),
                         ),
-                      );
-                    }),
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-        ),
-      ]),
-      floatingActionButton: Container(
-        child: ElevatedButton(
-          child: const Text('WebPages'),
+        ]),
+        floatingActionButton: ElevatedButton(
+          child: Text('WebPages ${websites.length}'),
           onPressed: () {
             hideWebsite = !hideWebsite;
             setState(() {});
@@ -300,31 +330,3 @@ _launchURL(String url) async {
     mode: LaunchMode.externalApplication,
   );
 }
-
-Widget buildSheet(websites) => Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: websites.length,
-              itemBuilder: ((context, index) {
-                return Container(
-                  margin: const EdgeInsets.all(10),
-                  height: 200,
-                  child: WebView(
-                    initialUrl: websites[index],
-                    gestureRecognizers: Set()
-                      ..add(
-                        Factory<VerticalDragGestureRecognizer>(
-                          () => VerticalDragGestureRecognizer(),
-                        ),
-                      ),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
