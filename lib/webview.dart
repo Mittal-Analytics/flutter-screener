@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -12,6 +14,9 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 // Import for iOS features.
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 // #enddocregion platform_imports
+import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:file_picker/file_picker.dart';
 
 class ScreenerApp extends StatefulWidget {
   final bool debug;
@@ -34,7 +39,7 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   late bool googleUser;
   var _lightMode = true;
-
+  var _currentcompany = '';
   @override
   void initState() {
     super.initState();
@@ -82,6 +87,10 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
                   'document.querySelector(\'button[onclick="SetTheme(\\\'light\\\')"]\').onclick = function() {window.MODES.postMessage(\'light\'); SetTheme(\'light\');};');
               await controller.runJavaScript(
                   'document.querySelector(\'button[onclick="SetTheme(\\\'dark\\\')"]\').onclick = function() {window.MODES.postMessage(\'dark\'); SetTheme(\'dark\');};');
+              await controller.runJavaScript('let title = document.title;'
+                  'let index = title.indexOf(" Ltd");'
+                  'let companyName = title.substring(0, index + 4);'
+                  'CompanyName.postMessage(companyName)');
             }
           },
           onPageFinished: (String url) async {
@@ -117,6 +126,9 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
           onNavigationRequest: (NavigationRequest request) {
             if (request.url.endsWith('login/google/')) {
               _handleSignIn();
+              return NavigationDecision.prevent;
+            } else if (request.url.contains('export')) {
+              downloadFile(request.url, _currentcompany);
               return NavigationDecision.prevent;
             } else if (request.url.contains('home')) {
               _handleSignOut();
@@ -156,6 +168,12 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
           }
         },
       )
+      ..addJavaScriptChannel('CompanyName',
+          onMessageReceived: (JavaScriptMessage message) async {
+        setState(() {
+          _currentcompany = message.message;
+        });
+      })
       ..enableZoom(false)
       ..setUserAgent("random")
       ..loadRequest(Uri.parse(_screenerHomeUrl));
@@ -305,11 +323,27 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
               body: WebViewWidget(
                 controller: _controller,
               ),
+              // floatingActionButton:
+              //     const FloatingActionButton(onPressed: downloadFile),
             ),
           ),
         ),
       ),
     );
+  }
+}
+
+Future<void> downloadFile(String url, String name) async {
+  final response = await http.post(Uri.parse(url));
+  final bytes = response.bodyBytes;
+  var status = await Permission.storage.request();
+  if (status != PermissionStatus.granted) {
+    throw Exception('Permission denied to write to storage');
+  }
+  String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+  if (selectedDirectory != null) {
+    final file = File('$selectedDirectory/$name.xlsx');
+    await file.writeAsBytes(bytes);
   }
 }
 
