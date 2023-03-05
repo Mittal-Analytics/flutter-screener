@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -8,15 +6,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:async';
-// #docregion platform_imports
-// Import for Android features.
 import 'package:webview_flutter_android/webview_flutter_android.dart';
-// Import for iOS features.
-import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
-// #enddocregion platform_imports
-import 'package:http/http.dart' as http;
-import 'package:permission_handler/permission_handler.dart';
-import 'package:file_picker/file_picker.dart';
 
 class ScreenerApp extends StatefulWidget {
   final bool debug;
@@ -38,8 +28,9 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
   late String requestMethod = "'post'";
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   late bool googleUser;
-  var _lightMode = true;
-  var _currentcompany = '';
+  bool _lightMode = true;
+  bool firstLoad = true;
+
   @override
   void initState() {
     super.initState();
@@ -48,20 +39,9 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
 
-    //Webview Controller
-    // #docregion platform_features
-    late final PlatformWebViewControllerCreationParams params;
-    if (WebViewPlatform.instance is WebKitWebViewPlatform) {
-      params = WebKitWebViewControllerCreationParams(
-        allowsInlineMediaPlayback: true,
-        mediaTypesRequiringUserAction: const <PlaybackMediaTypes>{},
-      );
-    } else {
-      params = const PlatformWebViewControllerCreationParams();
-    }
-
     final WebViewController controller =
-        WebViewController.fromPlatformCreationParams(params);
+        WebViewController.fromPlatformCreationParams(
+            const PlatformWebViewControllerCreationParams());
     // #enddocregion platform_features
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -78,19 +58,37 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
           },
           onPageStarted: (String url) async {
             if (url.contains('screener')) {
+              if (firstLoad == true) {
+                final cookieString = await controller
+                    .runJavaScriptReturningResult('document.cookie');
+                final cookies = cookieString.toString().split(';');
+                for (final cookie in cookies) {
+                  final parts = cookie.split('=');
+                  final name = parts[0].trim();
+                  final value = parts.length > 1 ? parts[1].trim() : '';
+
+                  if (name == 'theme') {
+                    if (value.trim().contains("dark")) {
+                      setState(() {
+                        _lightMode = false;
+                      });
+                    }
+                    break;
+                  }
+                }
+                setState(() {
+                  firstLoad = false;
+                });
+              }
               await controller.runJavaScript(
                   "if(document.querySelectorAll('.top-nav-holder')){"
                   "const topNavHolders = document.querySelectorAll('.top-nav-holder');"
                   "for (let i = 0; i < topNavHolders.length; i++) {"
                   "  topNavHolders[i].style.display = 'none';}}");
-              await controller.runJavaScript(
-                  'document.querySelector(\'button[onclick="SetTheme(\\\'light\\\')"]\').onclick = function() {window.MODES.postMessage(\'light\'); SetTheme(\'light\');};');
-              await controller.runJavaScript(
-                  'document.querySelector(\'button[onclick="SetTheme(\\\'dark\\\')"]\').onclick = function() {window.MODES.postMessage(\'dark\'); SetTheme(\'dark\');};');
-              await controller.runJavaScript('let title = document.title;'
-                  'let index = title.indexOf(" Ltd");'
-                  'let companyName = title.substring(0, index + 4);'
-                  'CompanyName.postMessage(companyName)');
+              if (url.contains('company')) {
+                await controller.runJavaScript(
+                    "const button = document.querySelector('[aria-label=\"Export to Excel\"]');button.style.display = 'none';");
+              }
             }
           },
           onPageFinished: (String url) async {
@@ -106,29 +104,27 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
                   'document.querySelector(\'button[onclick="SetTheme(\\\'dark\\\')"]\').onclick = function() {window.MODES.postMessage(\'dark\'); SetTheme(\'dark\');};');
             }
             if (url.contains("premium")) {
-              await controller.runJavaScript("if (document.getElementById('razorpay-info')) {" +
-                  "var info = document.getElementById('razorpay-info');" +
-                  "btn1 = document.createElement('button');" +
-                  "function cloneAttributes(element, sourceNode) { let attr; let attributes = Array.prototype.slice.call(sourceNode.attributes); while(attr =attributes.pop()) {element.setAttribute(attr.nodeName, attr.nodeValue);}};" +
-                  "cloneAttributes(btn1, info);" +
-                  "info.parentElement.append(btn1);" +
-                  "info.style.display = 'none';" +
-                  "btn1.innerText='BUY NOW';" +
-                  "btn1.addEventListener('click', function() {" +
-                  "options = {'key': info.getAttribute('data-key'),'amount': info.getAttribute('data-amount'),'currency': 'INR','name': 'Mittal Analytics (P) Ltd','description': info.getAttribute('data-description')," +
-                  "'display_currency': info.getAttribute('data-display_currency'),'display_amount': info.getAttribute('data-display_amount'),'prefill': {'name': info.getAttribute('data-prefill.name')," +
-                  "'email': info.getAttribute('data-prefill.email')}," +
-                  "'handler': function (response) {var inputs = info.form.elements;for (var i = 0; i < inputs.length; i++) {if (inputs[i].name === 'razorpay_payment_id') {inputs[i].value = response.razorpay_payment_id}};info.form.submit()}," +
-                  "'notes': {'plan_name': info.getAttribute('data-notes.plan_name')" +
+              await controller.runJavaScript(
+                  "if (document.getElementById('razorpay-info')) {"
+                  "var info = document.getElementById('razorpay-info');"
+                  "btn1 = document.createElement('button');"
+                  "function cloneAttributes(element, sourceNode) { let attr; let attributes = Array.prototype.slice.call(sourceNode.attributes); while(attr =attributes.pop()) {element.setAttribute(attr.nodeName, attr.nodeValue);}};"
+                  "cloneAttributes(btn1, info);"
+                  "info.parentElement.append(btn1);"
+                  "info.style.display = 'none';"
+                  "btn1.innerText='BUY NOW';"
+                  "btn1.addEventListener('click', function() {"
+                  "options = {'key': info.getAttribute('data-key'),'amount': info.getAttribute('data-amount'),'currency': 'INR','name': 'Mittal Analytics (P) Ltd','description': info.getAttribute('data-description'),"
+                  "'display_currency': info.getAttribute('data-display_currency'),'display_amount': info.getAttribute('data-display_amount'),'prefill': {'name': info.getAttribute('data-prefill.name'),"
+                  "'email': info.getAttribute('data-prefill.email')},"
+                  "'handler': function (response) {var inputs = info.form.elements;for (var i = 0; i < inputs.length; i++) {if (inputs[i].name === 'razorpay_payment_id') {inputs[i].value = response.razorpay_payment_id}};info.form.submit()},"
+                  "'notes': {'plan_name': info.getAttribute('data-notes.plan_name')"
                   ",'user_id': info.getAttribute('data-notes.user_id')}};RAZORPAY.postMessage(JSON.stringify(options))})}");
             }
           },
           onNavigationRequest: (NavigationRequest request) {
             if (request.url.endsWith('login/google/')) {
               _handleSignIn();
-              return NavigationDecision.prevent;
-            } else if (request.url.contains('export')) {
-              downloadFile(request.url, _currentcompany);
               return NavigationDecision.prevent;
             } else if (request.url.contains('home')) {
               _handleSignOut();
@@ -168,18 +164,12 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
           }
         },
       )
-      ..addJavaScriptChannel('CompanyName',
-          onMessageReceived: (JavaScriptMessage message) async {
-        setState(() {
-          _currentcompany = message.message;
-        });
-      })
       ..enableZoom(false)
       ..setUserAgent("random")
       ..loadRequest(Uri.parse(_screenerHomeUrl));
     // #docregion platform_features
     if (controller.platform is AndroidWebViewController) {
-      AndroidWebViewController.enableDebugging(true);
+      AndroidWebViewController.enableDebugging(false);
       (controller.platform as AndroidWebViewController)
           .setMediaPlaybackRequiresUserGesture(false);
     }
@@ -207,17 +197,17 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
   void postFunction(postUrl, postParam, requestMethod) {
     postParam = "$postParam";
     requestMethod = "'post'";
-    _controller.runJavaScript("function post(path, params, method='post') {" +
-        "const form = document.createElement('form');" +
-        "form.method = method;" +
-        "form.action = path;" +
-        "for (const key in params) {" +
-        "if (params.hasOwnProperty(key)) {" +
-        "const hiddenField = document.createElement('input');" +
-        "hiddenField.type = 'hidden';" +
-        "hiddenField.name = key;" +
-        "hiddenField.value = params[key];" +
-        "form.appendChild(hiddenField);}}document.body.appendChild(form);form.submit();}" +
+    _controller.runJavaScript("function post(path, params, method='post') {"
+        "const form = document.createElement('form');"
+        "form.method = method;"
+        "form.action = path;"
+        "for (const key in params) {"
+        "if (params.hasOwnProperty(key)) {"
+        "const hiddenField = document.createElement('input');"
+        "hiddenField.type = 'hidden';"
+        "hiddenField.name = key;"
+        "hiddenField.value = params[key];"
+        "form.appendChild(hiddenField);}}document.body.appendChild(form);form.submit();}"
         "post($postUrl, $postParam, method=$requestMethod)");
   }
 
@@ -323,27 +313,11 @@ class _ScreenerAppState extends State<ScreenerApp> with WidgetsBindingObserver {
               body: WebViewWidget(
                 controller: _controller,
               ),
-              // floatingActionButton:
-              //     const FloatingActionButton(onPressed: downloadFile),
             ),
           ),
         ),
       ),
     );
-  }
-}
-
-Future<void> downloadFile(String url, String name) async {
-  final response = await http.post(Uri.parse(url));
-  final bytes = response.bodyBytes;
-  var status = await Permission.storage.request();
-  if (status != PermissionStatus.granted) {
-    throw Exception('Permission denied to write to storage');
-  }
-  String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-  if (selectedDirectory != null) {
-    final file = File('$selectedDirectory/$name.xlsx');
-    await file.writeAsBytes(bytes);
   }
 }
 
